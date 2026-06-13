@@ -3,244 +3,200 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="theme-color" content="#030303">
-    <title>DSP Command Center</title>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <meta name="theme-color" content="#000000">
+    <title>DSP Command Center | iOS Edition</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
         :root {
-            --bg-dark: #030303;
-            --card-glass: rgba(255, 255, 255, 0.02);
-            --card-border: rgba(255, 255, 255, 0.06);
-            --accent-glow: rgba(59, 130, 246, 0.4);
-            --accent-blue: #3b82f6;
-            --accent-green: #10b981;
-            --accent-red: #ef4444;
-            --accent-orange: #f59e0b;
-            --text-main: #f8fafc;
-            --text-muted: #64748b;
-            --nav-height: 75px;
+            /* iOS Dark Mode Palette */
+            --bg-base: #000000;
+            --card-glass: rgba(28, 28, 30, 0.65);
+            --card-border: rgba(255, 255, 255, 0.08);
+            
+            /* Apple System Colors */
+            --apple-blue: #0A84FF;
+            --apple-green: #30D158;
+            --apple-orange: #FF9F0A;
+            --apple-red: #FF453A;
+            --apple-purple: #BF5AF2;
+            
+            --text-main: #FFFFFF;
+            --text-muted: #EBEBF599; /* iOS Secondary Text */
+            --nav-height: 85px;
         }
 
         * {
             margin: 0; padding: 0; box-sizing: border-box;
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Apple Color Emoji", "Segoe UI Emoji", sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
             -webkit-tap-highlight-color: transparent;
         }
 
         body {
-            background-color: var(--bg-dark); color: var(--text-main);
+            background-color: var(--bg-base); color: var(--text-main);
             min-height: 100vh; overflow-x: hidden;
             padding-bottom: calc(var(--nav-height) + 2rem);
-            cursor: none; 
-            perspective: 2000px;
+            /* iOS Subtle Gradient Glow */
+            background-image: radial-gradient(circle at 15% 0%, rgba(10, 132, 255, 0.15) 0%, transparent 40%),
+                              radial-gradient(circle at 85% 100%, rgba(48, 209, 88, 0.1) 0%, transparent 40%);
+            background-attachment: fixed;
         }
 
-        /* --- Background & Effects --- */
-        .noise-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: -1; opacity: 0.04; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E"); }
-        .bg-orbs { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -2; overflow: hidden; pointer-events: none; }
-        .orb { position: absolute; border-radius: 50%; filter: blur(120px); opacity: 0.3; animation: float 20s infinite alternate cubic-bezier(0.4, 0, 0.2, 1); }
-        .orb-1 { width: 400px; height: 400px; background: #1e3a8a; top: -10%; left: -10%; }
-        .orb-2 { width: 300px; height: 300px; background: #064e3b; bottom: 10%; right: -5%; animation-delay: -5s; }
-        @keyframes float { 0% { transform: translate(0, 0) scale(1); } 100% { transform: translate(50px, 50px) scale(1.2); } }
+        .container { max-width: 1200px; margin: 0 auto; padding: 2rem 1.2rem; }
 
-        .bg-text { position: fixed; top: 15vh; left: 5%; font-family: 'Playfair Display', serif; font-size: 15vw; font-weight: 600; line-height: 0.8; color: transparent; -webkit-text-stroke: 1px rgba(255,255,255,0.04); z-index: -1; pointer-events: none; white-space: nowrap; transform-style: preserve-3d; transition: transform 0.1s linear; }
-
-        /* --- Desktop Cursor --- */
-        .cursor-dot { width: 8px; height: 8px; background: #fff; border-radius: 50%; position: fixed; pointer-events: none; z-index: 9999; transform: translate(-50%, -50%); transition: width 0.2s, height 0.2s; }
-        .cursor-outline { width: 40px; height: 40px; border: 1px solid rgba(255,255,255,0.5); border-radius: 50%; position: fixed; pointer-events: none; z-index: 9998; transform: translate(-50%, -50%); transition: all 0.15s ease-out; }
-        a:hover ~ .cursor-dot, button:hover ~ .cursor-dot, .day-box:hover ~ .cursor-dot, input[type="checkbox"]:hover ~ .cursor-dot { transform: translate(-50%, -50%) scale(2); background: var(--accent-blue); }
-
-        .container { max-width: 1200px; margin: 0 auto; padding: 2rem 1.5rem; position: relative; z-index: 1;}
-
-        /* --- 3D Cards Architecture --- */
+        /* --- iOS Glassmorphism Cards --- */
         .card {
-            --rot-x: 0deg; --rot-y: 0deg; --scroll-rot-x: 0deg; --scroll-z: 0px;
-            --reveal-y: 100px; --reveal-rot-x: 25deg; --reveal-scale: 0.9; --reveal-opacity: 0; --reveal-blur: 15px;
-
-            background: var(--card-glass); border: 1px solid var(--card-border); border-radius: 24px; padding: 2rem;
-            backdrop-filter: blur(40px); -webkit-backdrop-filter: blur(40px); box-shadow: 0 20px 40px rgba(0,0,0,0.2);
-            position: relative; overflow: hidden; transform-style: preserve-3d;
-            
-            opacity: var(--reveal-opacity); filter: blur(var(--reveal-blur));
-            transform: perspective(1500px) translateY(var(--reveal-y)) translateZ(var(--scroll-z)) scale(var(--reveal-scale)) rotateX(calc(var(--rot-x) + var(--scroll-rot-x) + var(--reveal-rot-x))) rotateY(var(--rot-y));
-            transition: border-color 0.4s ease, opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), filter 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+            background: var(--card-glass); 
+            border: 1px solid var(--card-border); 
+            border-radius: 28px; padding: 2rem;
+            backdrop-filter: blur(40px) saturate(150%);
+            -webkit-backdrop-filter: blur(40px) saturate(150%);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            margin-bottom: 1.5rem;
+            transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 0.3s;
         }
-        .card::before { content: ""; position: absolute; top: 0; left: 0; right: 0; bottom: 0; border-radius: inherit; background: radial-gradient(800px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(255, 255, 255, 0.08), transparent 40%); z-index: 0; pointer-events: none; opacity: 0; transition: opacity 0.5s; transform: translateZ(-1px); }
-        .card:hover::before { opacity: 1; }
-        .card:hover { border-color: rgba(255,255,255,0.15); box-shadow: 0 30px 60px rgba(0,0,0,0.4); }
-        .card > * { position: relative; z-index: 1; transform: translateZ(20px); }
-        .card.active { --reveal-y: 0px; --reveal-rot-x: 0deg; --reveal-scale: 1; --reveal-opacity: 1; --reveal-blur: 0px; }
-        .card.active.tracking { transition: border-color 0.4s ease, transform 0.1s linear, box-shadow 0.4s ease; }
+        
+        @media (min-width: 768px) {
+            .card:hover { transform: scale(1.01); box-shadow: 0 15px 35px rgba(0,0,0,0.4); }
+        }
 
-        .tab-content { display: none; grid-template-columns: repeat(12, 1fr); gap: 2rem; }
-        .tab-content.active { display: grid; }
-        .col-12 { grid-column: span 12; }
+        .tab-content { display: none; animation: fadeIn 0.4s ease-out; }
+        .tab-content.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* --- Typography & Elements --- */
-        h1, h2, h3 { font-family: 'Playfair Display', serif; font-weight: 600; letter-spacing: 0.02em; }
-        .subtitle { color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.2em; margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between;}
-        .text-gradient { background: linear-gradient(180deg, #fff 0%, #a1a1aa 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
-        .badge { display: inline-flex; align-items: center; gap: 0.5rem; background: rgba(255,255,255,0.03); color: #e2e8f0; padding: 0.6rem 1.2rem; border-radius: 40px; font-size: 0.85rem; border: 1px solid var(--card-border); transform: translateZ(10px); }
+        /* --- Typography --- */
+        h1 { font-size: 2.5rem; font-weight: 700; letter-spacing: -0.04em; margin-bottom: 0.5rem; }
+        h2 { font-size: 1.3rem; font-weight: 600; letter-spacing: -0.02em; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem; }
+        .subtitle { color: var(--text-muted); font-size: 0.85rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; }
 
-        /* Switches */
-        .switch { position: relative; display: inline-block; width: 54px; height: 30px; }
+        .badge { display: inline-flex; align-items: center; gap: 0.4rem; background: rgba(255,255,255,0.1); color: #FFF; padding: 0.5rem 1rem; border-radius: 20px; font-size: 0.85rem; font-weight: 500; }
+        
+        .flex-between { display: flex; justify-content: space-between; align-items: center; }
+
+        /* --- Controls & Inputs --- */
+        .switch { position: relative; display: inline-block; width: 50px; height: 30px; }
         .switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(255,255,255,0.05); transition: .5s cubic-bezier(0.16, 1, 0.3, 1); border-radius: 34px; border: 1px solid var(--card-border);}
-        .slider:before { position: absolute; content: ""; height: 22px; width: 22px; left: 4px; bottom: 3px; background-color: #94a3b8; transition: .5s cubic-bezier(0.16, 1, 0.3, 1); border-radius: 50%; }
-        input:checked + .slider { background-color: rgba(16, 185, 129, 0.15); border-color: var(--accent-green); }
-        input:checked + .slider:before { transform: translateX(24px); background-color: var(--accent-green); box-shadow: 0 0 15px var(--accent-green);}
-        .holiday-switch input:checked + .slider { background-color: rgba(245, 158, 11, 0.15); border-color: var(--accent-orange); }
-        .holiday-switch input:checked + .slider:before { background-color: var(--accent-orange); box-shadow: 0 0 15px var(--accent-orange);}
+        .slider { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(255,255,255,0.15); border-radius: 34px; transition: 0.3s; }
+        .slider:before { position: absolute; content: ""; height: 26px; width: 26px; left: 2px; bottom: 2px; background-color: white; border-radius: 50%; transition: 0.3s; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        input:checked + .slider { background-color: var(--apple-green); }
+        input:checked + .slider:before { transform: translateX(20px); }
+        .holiday-switch input:checked + .slider { background-color: var(--apple-orange); }
 
-        input[type="range"] { width: 100%; height: 6px; background: rgba(255,255,255,0.05); border-radius: 10px; outline: none; -webkit-appearance: none; appearance: none; margin: 1.5rem 0; }
-        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 26px; height: 26px; border-radius: 50%; background: #fff; cursor: pointer; box-shadow: 0 0 20px rgba(255,255,255,0.3); transition: transform 0.3s; }
-        input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.2); }
-        input[type="text"], input[type="number"] { width: 100%; background: transparent; border: none; border-bottom: 1px solid var(--card-border); color: #fff; padding: 1rem 0; outline: none; transition: all 0.4s; font-size: 1.1rem; margin-bottom: 1rem; border-radius: 0;}
-        input[type="text"]:focus, input[type="number"]:focus { border-bottom-color: var(--accent-blue); }
+        input[type="text"], input[type="number"] { width: 100%; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); color: #FFF; padding: 1.2rem; outline: none; font-size: 1rem; border-radius: 16px; transition: 0.3s; margin-bottom: 1rem;}
+        input[type="text"]:focus, input[type="number"]:focus { border-color: var(--apple-blue); box-shadow: 0 0 0 3px rgba(10, 132, 255, 0.2); }
 
-        button { background: #fff; color: #000; border: none; padding: 1.2rem; border-radius: 40px; font-weight: 600; font-size: 1rem; width: 100%; display: flex; align-items: center; justify-content: center; gap: 0.5rem; transition: all 0.3s; cursor: pointer; transform: translateZ(15px);}
-        button:hover { background: var(--accent-blue); color: #fff; transform: translateY(-3px) translateZ(20px); box-shadow: 0 10px 30px rgba(59, 130, 246, 0.3); }
+        button { background: var(--apple-blue); color: #FFF; border: none; padding: 1.2rem; border-radius: 18px; font-weight: 600; font-size: 1.05rem; width: 100%; display: flex; align-items: center; justify-content: center; gap: 0.5rem; transition: 0.2s; cursor: pointer; }
+        button:active { transform: scale(0.96); opacity: 0.8; }
+        button.secondary { background: rgba(255,255,255,0.1); color: #FFF; }
 
-        /* Task List */
-        .task-list { display: flex; flex-direction: column; gap: 1rem; }
-        .task-item { display: flex; align-items: center; gap: 1.2rem; padding: 1.2rem; background: rgba(255,255,255,0.02); border-radius: 20px; border: 1px solid var(--card-border); transition: all 0.3s; cursor: pointer; transform: translateZ(10px);}
-        .task-item:hover { background: rgba(255,255,255,0.04); transform: translateX(5px) translateZ(15px); border-color: rgba(255,255,255,0.1);}
-        .task-item.checked { background: rgba(16, 185, 129, 0.05); border-color: rgba(16, 185, 129, 0.2); }
-        .task-item input { width: 24px; height: 24px; accent-color: var(--accent-green); pointer-events: none;}
-        .task-item span { font-size: 1.1rem; }
+        /* --- Task Lists & UI Modules --- */
+        .task-item { display: flex; align-items: center; gap: 1rem; padding: 1.2rem; background: rgba(255,255,255,0.03); border-radius: 18px; transition: 0.2s; cursor: pointer; margin-bottom: 0.8rem; border: 1px solid transparent; }
+        .task-item:active { transform: scale(0.98); background: rgba(255,255,255,0.06); }
+        .task-item.checked { background: rgba(48, 209, 88, 0.1); border-color: rgba(48, 209, 88, 0.3); }
+        .task-item input { width: 22px; height: 22px; accent-color: var(--apple-green); pointer-events: none;}
         .hidden-task { display: none !important; }
 
-        /* Ring & Chips */
-        .progress-ring { position: relative; width: 160px; height: 160px; margin: 0 auto 2rem; transform: translateZ(25px);}
-        .progress-ring svg { transform: rotate(-90deg); width: 100%; height: 100%; filter: drop-shadow(0 0 15px rgba(59, 130, 246, 0.2));}
-        .progress-ring circle { fill: none; stroke-width: 6; stroke-linecap: round; }
-        .ring-bg { stroke: rgba(255,255,255,0.03); }
-        .ring-fill { stroke: var(--accent-blue); stroke-dasharray: 440; stroke-dashoffset: 440; transition: stroke-dashoffset 1.5s cubic-bezier(0.16, 1, 0.3, 1), stroke 0.5s; }
-        .ring-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 2.5rem; font-family: 'Playfair Display', serif; font-weight: 600; }
+        /* Timer UI */
+        .timer-display { font-size: 5rem; font-weight: 700; font-variant-numeric: tabular-nums; text-align: center; letter-spacing: -0.02em; margin: 1rem 0; }
+        .timer-ctrls { display: flex; gap: 1rem; }
 
-        .target-chip { background: transparent; border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 1rem 1.5rem; border-radius: 40px; font-weight: 500; display: flex; align-items: center; gap: 0.8rem; margin-bottom: 0.8rem; opacity: 0; animation: fadeSlide 0.6s forwards; transition: all 0.3s; transform: translateZ(15px);}
-        .target-chip:hover { transform: translateX(8px) translateZ(20px); background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.2);}
-        .holiday-chip { border-color: rgba(245, 158, 11, 0.3); color: #fcd34d; }
-        @keyframes fadeSlide { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
+        /* Roadmap UI */
+        .phase-box { padding: 1.5rem; border-radius: 18px; background: rgba(255,255,255,0.05); border-left: 4px solid var(--apple-blue); margin-bottom: 1rem; }
+        .phase-box h3 { font-size: 1.1rem; margin-bottom: 0.3rem; }
+        .phase-box p { font-size: 0.9rem; color: var(--text-muted); }
 
-        /* Calendar */
-        .calendar-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(40px, 1fr)); gap: 0.8rem; }
-        .day-box { aspect-ratio: 1; border-radius: 12px; background: rgba(255,255,255,0.02); border: 1px solid var(--card-border); display: flex; align-items: center; justify-content: center; font-size: 0.9rem; color: var(--text-muted); cursor: pointer; transition: all 0.3s; transform: translateZ(10px);}
-        .day-box:hover { transform: translateY(-5px) scale(1.1) translateZ(25px); background: rgba(255,255,255,0.1); color: #fff; box-shadow: 0 10px 20px rgba(0,0,0,0.5);}
-        .day-completed { background: rgba(16, 185, 129, 0.1); color: var(--accent-green); border-color: rgba(16, 185, 129, 0.3); }
-        .day-partial { background: rgba(245, 158, 11, 0.1); color: var(--accent-orange); border-color: rgba(245, 158, 11, 0.3); }
-        .day-missed { background: rgba(239, 68, 68, 0.1); color: var(--accent-red); border-color: rgba(239, 68, 68, 0.3); }
+        /* Wrong Tracker UI */
+        .wrong-row { display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: rgba(255,255,255,0.03); border-radius: 16px; margin-bottom: 0.8rem; }
+        .wrong-ctrls { display: flex; align-items: center; gap: 1rem; }
+        .btn-sm { width: 35px; height: 35px; padding: 0; border-radius: 10px; font-size: 1.2rem; }
 
-        #toast { position: fixed; top: 30px; left: 50%; transform: translateX(-50%) translateY(-150px) translateZ(50px); background: rgba(10, 10, 10, 0.9); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 1.2rem 2.5rem; border-radius: 40px; backdrop-filter: blur(20px); font-weight: 500; display: flex; align-items: center; gap: 0.8rem; z-index: 10000; transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1); box-shadow: 0 20px 40px rgba(0,0,0,0.5); }
-        #toast.show { transform: translateX(-50%) translateY(0) translateZ(50px); }
+        /* Calendar Grid */
+        .calendar-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(45px, 1fr)); gap: 0.8rem; }
+        .day-box { aspect-ratio: 1; border-radius: 14px; background: rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: center; font-size: 0.95rem; font-weight: 600; color: var(--text-muted); cursor: pointer; transition: 0.2s;}
+        .day-box:active { transform: scale(0.9); }
+        .day-completed { background: var(--apple-green); color: #000; }
+        .day-partial { background: var(--apple-orange); color: #000; }
+        .day-missed { background: var(--apple-red); color: #FFF; }
 
-        .bottom-nav { position: fixed; bottom: 1rem; left: 50%; transform: translateX(-50%); width: 90%; max-width: 400px; height: var(--nav-height); background: rgba(10, 10, 10, 0.8); backdrop-filter: blur(30px); border: 1px solid rgba(255,255,255,0.08); border-radius: 40px; display: flex; justify-content: space-around; align-items: center; z-index: 100; }
-        .nav-item { display: flex; flex-direction: column; align-items: center; gap: 0.2rem; color: var(--text-muted); font-size: 0.7rem; padding: 0.5rem; transition: all 0.3s; cursor: pointer;}
-        .nav-item i { font-size: 1.8rem; transition: transform 0.3s; }
-        .nav-item.active { color: #fff; }
-        .nav-item.active i { transform: translateY(-4px) scale(1.1); text-shadow: 0 0 15px rgba(255,255,255,0.5);}
+        /* Grid System */
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+        @media (max-width: 768px) { .grid-2 { grid-template-columns: 1fr; } }
 
-        /* --- MOBILE OPTIMIZATION --- */
-        @media (max-width: 768px) {
-            body { cursor: auto; perspective: 1000px;} 
-            .cursor-dot, .cursor-outline { display: none !important; }
-            .container { padding: 1.5rem 1rem; }
-            .card { padding: 1.5rem; border-radius: 20px; }
-            .card:hover { transform: none; box-shadow: 0 10px 20px rgba(0,0,0,0.2); } 
-            .card::before { display: none; } 
-            .hero-header { flex-direction: column; align-items: flex-start !important; gap: 1.5rem !important; }
-            #greeting { font-size: 2.5rem !important; }
-            .hero-stats { width: 100%; justify-content: space-between; text-align: left !important; }
-            #heroStreak, #heroDaysLeft { font-size: 2.5rem !important; }
-            .tab-content { gap: 1.2rem; }
-            .task-item { padding: 1rem; }
-            .task-item:hover, .target-chip:hover, button:hover, .day-box:hover { transform: none; }
-            input[type="range"]::-webkit-slider-thumb { width: 30px; height: 30px; }
-        }
-        @media (min-width: 1025px) { .bottom-nav { display: none; } .tab-content { display: grid !important; } }
+        /* Progress Ring */
+        .progress-ring { position: relative; width: 140px; height: 140px; margin: 0 auto 1.5rem; }
+        .progress-ring svg { transform: rotate(-90deg); width: 100%; height: 100%; }
+        .progress-ring circle { fill: none; stroke-width: 8; stroke-linecap: round; }
+        .ring-bg { stroke: rgba(255,255,255,0.1); }
+        .ring-fill { stroke: var(--apple-green); stroke-dasharray: 440; stroke-dashoffset: 440; transition: 0.8s ease-out; }
+        .ring-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 2rem; font-weight: 700; }
+
+        /* Navigation */
+        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; height: var(--nav-height); background: rgba(28, 28, 30, 0.8); backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px); border-top: 1px solid var(--card-border); display: flex; justify-content: space-around; align-items: center; z-index: 100; padding-bottom: env(safe-area-inset-bottom); }
+        .nav-item { display: flex; flex-direction: column; align-items: center; color: var(--text-muted); padding: 0.5rem; transition: 0.2s; cursor: pointer; gap: 4px; font-size: 0.7rem; font-weight: 500;}
+        .nav-item i { font-size: 1.8rem; }
+        .nav-item.active { color: var(--apple-blue); }
+
+        /* Toast */
+        #toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-100px); background: rgba(255,255,255,0.9); color: #000; padding: 1rem 2rem; border-radius: 40px; font-weight: 600; display: flex; align-items: center; gap: 0.8rem; z-index: 10000; transition: 0.4s cubic-bezier(0.25, 0.8, 0.25, 1); box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        #toast.show { transform: translateX(-50%) translateY(0); }
+
     </style>
 </head>
 <body>
 
-    <div class="noise-overlay"></div>
-    <div class="cursor-dot"></div>
-    <div class="cursor-outline"></div>
+    <div id="toast"> <span id="toastMsg">Success</span></div>
 
-    <div class="bg-orbs"><div class="orb orb-1"></div><div class="orb orb-2"></div></div>
-    <div class="bg-text" id="bgText">D S P</div>
-
-    <div id="toast">✨ <span id="toastMsg">Action successful</span></div>
-
-    <div class="container" id="cards-container">
+    <div class="container">
         <div class="tab-content active" id="tab-home">
-            <div class="card col-12">
-                <div class="hero-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 2rem;">
+            <div class="card" style="background: linear-gradient(135deg, rgba(10, 132, 255, 0.1) 0%, rgba(28, 28, 30, 0.65) 100%); border-color: rgba(10, 132, 255, 0.3);">
+                <div class="flex-between" style="align-items: flex-start; margin-bottom: 1.5rem;">
                     <div>
-                        <h1 id="greeting" class="text-gradient" style="font-size: 3.5rem; margin-bottom: 1rem; line-height: 1.1;">Command Center</h1>
-                        <div style="display: flex; gap: 0.8rem; flex-wrap: wrap;">
-                            <span class="badge">🎯 99%+ Goal</span>
-                            <span class="badge" style="border-color: rgba(16, 185, 129, 0.3); color: var(--accent-green);">👮‍♂️ WBCS DSP</span>
-                        </div>
+                        <h1 id="greeting">Good Morning</h1>
+                        <div class="badge" style="color: var(--apple-green); background: rgba(48, 209, 88, 0.15);"> WBCS DSP Target</div>
                     </div>
-                    <div class="hero-stats" style="display: flex; gap: 2rem; text-align: right;">
-                        <div>
-                            <div style="font-size: 3.5rem; font-family: 'Playfair Display', serif; color: #fff; line-height: 1;" id="heroStreak">0</div>
-                            <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.1em; margin-top: 0.5rem;">Max Streak</div>
-                        </div>
-                        <div>
-                            <div style="font-size: 3.5rem; font-family: 'Playfair Display', serif; color: #fff; line-height: 1;" id="heroDaysLeft">0</div>
-                            <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.1em; margin-top: 0.5rem;">Days Left</div>
-                        </div>
+                    <div style="text-align: right;">
+                        <div style="font-size: 2.5rem; font-weight: 700; line-height: 1;" id="heroStreak">0</div>
+                        <div class="subtitle">Day Streak</div>
                     </div>
+                </div>
+                <p id="quoteDisplay" style="color: var(--text-muted); font-style: italic; font-size: 0.95rem;"></p>
+            </div>
+
+            <div class="card">
+                <h2> Exam Roadmap</h2>
+                <div class="phase-box" style="border-left-color: var(--apple-green);">
+                    <h3>Phase 1: Foundation</h3>
+                    <p>Current Phase • Daily 80+ MCQ Practice</p>
+                </div>
+                <div class="phase-box" style="border-left-color: var(--text-muted); opacity: 0.6;">
+                    <h3>Phase 2: Practice</h3>
+                    <p>Starts July 1 • 100+ MCQ Daily & Past Papers</p>
+                </div>
+                <div class="phase-box" style="border-left-color: var(--text-muted); opacity: 0.6;">
+                    <h3>Phase 3: Final Sprint</h3>
+                    <p>Starts July 22 • Full Mock Tests & Revision</p>
                 </div>
             </div>
 
-            <div class="card col-12">
-                <div class="flex-between" style="margin-bottom: 1.5rem;">
-                    <h2 class="subtitle" style="margin: 0;">Today's Objective 📚</h2>
-                    <div style="display: flex; align-items: center; gap: 0.8rem;">
-                        <span style="font-size: 0.75rem; color: var(--text-muted);">HOLIDAY</span>
-                        <label class="switch holiday-switch">
-                            <input type="checkbox" id="holidayToggle" onchange="toggleHoliday()">
-                            <span class="slider"></span>
-                        </label>
-                    </div>
-                </div>
-                <div style="margin-bottom: 1.5rem;">
-                    <span id="routineDay" style="font-size: 0.8rem; color: #fff; background: rgba(255,255,255,0.05); padding: 0.4rem 1rem; border-radius: 30px; border: 1px solid rgba(255,255,255,0.1); transition: all 0.4s;"></span>
-                </div>
-                <div id="dynamicRoutineDisplay"></div>
-            </div>
-
-            <div class="card col-12">
-                <h2 class="subtitle">Mission Directive ⚡</h2>
-                <div style="padding: 2rem; border-radius: 16px; text-align: center; border: 1px solid rgba(16, 185, 129, 0.1); background: linear-gradient(180deg, rgba(16, 185, 129, 0.05) 0%, transparent 100%);">
-                    <p style="color: var(--accent-green); font-size: 1.3rem; font-family: 'Playfair Display', serif; font-style: italic;">"I am becoming a highly disciplined person."</p>
-                </div>
-                <div style="margin-top: 1.5rem; text-align: center; min-height: 50px; display: flex; align-items: center; justify-content: center;">
-                    <p id="quoteDisplay" style="color: var(--text-muted); font-size: 1rem; font-family: 'Playfair Display', serif; font-style: italic; transition: opacity 0.8s;"></p>
-                </div>
-            </div>
-            
-            <div class="card col-12">
-                <h2 class="subtitle">Promises Kept 🤝</h2>
+            <div class="card">
+                <h2> Promises Kept</h2>
                 <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem;">
-                    <input type="text" id="promiseInput" placeholder="What promise did I keep today? ✍️" style="margin: 0; flex: 1;">
-                    <button onclick="addPromise()" style="width: 55px; height: 55px; padding: 0; border-radius: 50%;"><i class="ph ph-plus" style="font-size: 1.5rem;"></i></button>
+                    <input type="text" id="promiseInput" placeholder="What promise did I keep today? " style="margin: 0;">
+                    <button onclick="addPromise()" style="width: 55px; border-radius: 16px;"><i class="ph-bold ph-plus"></i></button>
                 </div>
                 <div id="promiseList" style="display: flex; flex-direction: column; gap: 0.8rem;"></div>
             </div>
         </div>
 
         <div class="tab-content" id="tab-protocol">
-            <div class="card col-12">
+            <div class="card">
                 <div class="flex-between" style="margin-bottom: 2rem;">
-                    <h2 class="subtitle" style="margin: 0;">Daily Protocol ✅</h2>
+                    <h2> Daily Protocol</h2>
                     <div style="display: flex; align-items: center; gap: 0.8rem;">
-                        <span style="font-size: 0.75rem; color: var(--text-muted);">PT ENABLED</span>
+                        <span style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted);">PT</span>
                         <label class="switch">
                             <input type="checkbox" id="ptToggle" onchange="togglePT()" checked>
                             <span class="slider"></span>
@@ -249,67 +205,90 @@
                 </div>
                 
                 <div class="progress-ring">
-                    <svg><circle class="ring-bg" cx="80" cy="80" r="70"></circle><circle class="ring-fill" cx="80" cy="80" r="70" id="taskRing"></circle></svg>
+                    <svg><circle class="ring-bg" cx="70" cy="70" r="60"></circle><circle class="ring-fill" cx="70" cy="70" r="60" id="taskRing"></circle></svg>
                     <div class="ring-text" id="taskPercent">0%</div>
                 </div>
 
                 <div class="task-list" id="taskList">
-                    <div class="task-item pt-task" onclick="toggleTask(this)"><input type="checkbox"> <span>🏃‍♂️ Physical Training</span></div>
-                    <div class="task-item" onclick="toggleTask(this)"><input type="checkbox"> <span>📖 Study Session</span></div>
-                    <div class="task-item" onclick="toggleTask(this)"><input type="checkbox"> <span>📝 MCQ Practice</span></div>
-                    <div class="task-item" onclick="toggleTask(this)"><input type="checkbox"> <span>🔄 Revision</span></div>
-                    <div class="task-item" onclick="toggleTask(this)"><input type="checkbox"> <span>📕 Book Reading</span></div>
-                    <div class="task-item" onclick="toggleTask(this)"><input type="checkbox"> <span>📅 Tomorrow Planning</span></div>
-                    <div class="task-item" onclick="toggleTask(this)" style="border-left: 2px solid var(--accent-red);"><input type="checkbox"> <span>🔥 No Zero Day</span></div>
+                    <div class="task-item pt-task" onclick="toggleTask(this)"><input type="checkbox"> <span> Physical Training</span></div>
+                    <div class="task-item" onclick="toggleTask(this)"><input type="checkbox"> <span> Study Session</span></div>
+                    <div class="task-item" onclick="toggleTask(this)"><input type="checkbox"> <span> MCQ Practice</span></div>
+                    <div class="task-item" onclick="toggleTask(this)"><input type="checkbox"> <span> Core Revision</span></div>
+                    <div class="task-item" onclick="toggleTask(this)"><input type="checkbox"> <span> Book Reading</span></div>
+                    <div class="task-item" onclick="toggleTask(this)"><input type="checkbox"> <span> Tomorrow Planning</span></div>
                 </div>
             </div>
 
-            <div class="card col-12">
-                <h2 class="subtitle">Systems Check 📊</h2>
-                <div class="task-list" style="margin-bottom: 2rem;">
-                    <div><div class="flex-between"><label style="color: var(--text-muted);">Mood 🧠</label><span id="v-mood" style="font-weight: 600; font-size: 1.2rem;">5</span></div><input type="range" id="i-mood" min="1" max="10" value="5" oninput="updVal('mood')"></div>
-                    <div><div class="flex-between"><label style="color: var(--text-muted);">Energy ⚡</label><span id="v-energy" style="font-weight: 600; font-size: 1.2rem;">5</span></div><input type="range" id="i-energy" min="1" max="10" value="5" oninput="updVal('energy')"></div>
-                    <div><div class="flex-between"><label style="color: var(--text-muted);">Focus 🎯</label><span id="v-focus" style="font-weight: 600; font-size: 1.2rem;">5</span></div><input type="range" id="i-focus" min="1" max="10" value="5" oninput="updVal('focus')"></div>
-                    <div><div class="flex-between"><label style="color: var(--text-muted);">Discipline 🛡️</label><span id="v-disc" style="font-weight: 600; font-size: 1.2rem;">5</span></div><input type="range" id="i-disc" min="1" max="10" value="5" oninput="updVal('disc')"></div>
+            <div class="card">
+                <h2> Biometric Log</h2>
+                <div style="margin-bottom: 2rem;">
+                    <div class="flex-between" style="margin-bottom: 0.5rem;"><label>Energy Level </label><span id="v-energy" style="font-weight: 600;">5</span></div>
+                    <input type="range" id="i-energy" min="1" max="10" value="5" oninput="updVal('energy')">
+                    
+                    <div class="flex-between" style="margin-bottom: 0.5rem;"><label>Focus </label><span id="v-focus" style="font-weight: 600;">5</span></div>
+                    <input type="range" id="i-focus" min="1" max="10" value="5" oninput="updVal('focus')">
                 </div>
-                <input type="number" id="i-sleep" placeholder="Sleep Hours (e.g. 7) 😴" step="0.5">
-                <input type="text" id="i-notes" placeholder="Brief notes on today... ✍️">
-                <button onclick="saveCheckIn()" style="margin-top: 1rem;">💾 Save Metrics</button>
+                <input type="number" id="i-sleep" placeholder="Sleep Hours (e.g. 7) ">
+                <button onclick="playSound('pop'); showToast('Biometrics Logged! ')">Commit Data</button>
             </div>
         </div>
 
-        <div class="tab-content" id="tab-trackers">
-            <div class="card col-12">
-                <h2 class="subtitle">Academic Command 🎓</h2>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
-                    <input type="number" placeholder="Pol. Science (hrs)">
-                    <input type="number" placeholder="Philosophy (hrs)">
-                    <input type="number" placeholder="Bengali (hrs)">
-                    <input type="number" placeholder="English (hrs)">
+        <div class="tab-content" id="tab-focus">
+            <div class="card">
+                <h2> Study Focus Timer</h2>
+                <p class="subtitle" style="text-align: center; margin-bottom: 0;">Pomodoro Session</p>
+                <div class="timer-display" id="pomoDisplay" style="color: var(--apple-blue);">45:00</div>
+                <div class="timer-ctrls">
+                    <button onclick="togglePomo()" id="pomoBtn">Start</button>
+                    <button class="secondary" onclick="resetPomo()">Reset</button>
                 </div>
-                <button onclick="playSound('pop'); showToast('Data Logged! 📚')" style="background: transparent; color: #fff; border: 1px solid rgba(255,255,255,0.2);">Log Study Data</button>
-            </div>
-
-            <div class="card col-12">
-                <h2 class="subtitle" style="color: var(--accent-red);">Cigarette Control 🚭</h2>
-                <div style="font-size: 5rem; font-family: 'Playfair Display', serif; color: var(--accent-red); text-align: center; line-height: 1; transition: transform 0.3s;" id="cigCountDisplay">0</div>
-                <p style="text-align: center; color: var(--text-muted); font-size: 0.8rem; margin-bottom: 2rem; letter-spacing: 0.1em; text-transform: uppercase;">Smoked Today</p>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                    <button onclick="updateCig(-1)" style="background: transparent; color: #fff; border: 1px solid rgba(255,255,255,0.2);">-1 Deduct</button>
-                    <button onclick="updateCig(1)" style="background: rgba(239, 68, 68, 0.1); color: var(--accent-red); border: 1px solid rgba(239, 68, 68, 0.3);">+1 Log</button>
+                <div class="flex-between" style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--card-border);">
+                    <span style="color: var(--text-muted);">Completed Sessions</span>
+                    <span style="font-weight: 700; font-size: 1.2rem; color: var(--apple-green);" id="pomoCount">0</span>
                 </div>
             </div>
 
-            <div class="card col-12">
-                <h2 class="subtitle">30-Day Operation 🗓️</h2>
+            <div class="card">
+                <h2> Break Limit Timer</h2>
+                <div class="timer-display" id="breakDisplay" style="color: var(--apple-orange); font-size: 4rem;">10:00</div>
+                <div class="timer-ctrls">
+                    <button onclick="toggleBreak()" id="breakBtn" style="background: var(--apple-orange); color: #000;">Start Break</button>
+                    <button class="secondary" onclick="resetBreak()">Reset</button>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2 style="color: var(--apple-red);"> Cigarette Interface</h2>
+                <div style="font-size: 5rem; font-weight: 700; color: var(--apple-red); text-align: center; line-height: 1;" id="cigCountDisplay">0</div>
+                <p class="subtitle" style="text-align: center; margin: 1rem 0 1.5rem;">Smoked Today</p>
+                <div class="grid-2">
+                    <button class="secondary" onclick="updateCig(-1)">-1 Rectify</button>
+                    <button style="background: rgba(255, 69, 58, 0.15); color: var(--apple-red); border: 1px solid rgba(255, 69, 58, 0.3);" onclick="updateCig(1)">+1 Log</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-content" id="tab-academics">
+            <div class="card">
+                <h2> Weakness Tracker</h2>
+                <p class="subtitle" style="margin-bottom: 1.5rem;">Log Wrong Answers to Revise</p>
+                
+                <div id="wrongTrackerList">
+                    </div>
+                
+                <div style="margin-top: 1.5rem; padding: 1rem; background: rgba(255, 69, 58, 0.1); border-radius: 16px; border: 1px solid rgba(255, 69, 58, 0.2);">
+                    <p style="font-size: 0.9rem; color: #FFF;"> Brain fixes mistakes during sleep. Review these before bed for 40/40.</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2> 30-Day Grid</h2>
                 <div class="calendar-grid" id="calendarGrid"></div>
             </div>
-        </div>
-
-        <div class="tab-content" id="tab-stats">
-            <div class="card col-12">
-                <h2 class="subtitle">Performance Trends 📈</h2>
-                <div style="height: 350px; width: 100%; position: relative;">
+            
+            <div class="card">
+                <h2> Discipline Trend</h2>
+                <div style="height: 250px; width: 100%;">
                     <canvas id="trendChart"></canvas>
                 </div>
             </div>
@@ -317,21 +296,19 @@
     </div>
 
     <nav class="bottom-nav">
-        <div class="nav-item active" onclick="switchTab('tab-home', this)"><i class="ph-light ph-house"></i></div>
-        <div class="nav-item" onclick="switchTab('tab-protocol', this)"><i class="ph-light ph-check-square-offset"></i></div>
-        <div class="nav-item" onclick="switchTab('tab-trackers', this)"><i class="ph-light ph-target"></i></div>
-        <div class="nav-item" onclick="switchTab('tab-stats', this)"><i class="ph-light ph-chart-bar"></i></div>
+        <div class="nav-item active" onclick="switchTab('tab-home', this)"><i class="ph-fill ph-house"></i><span>Home</span></div>
+        <div class="nav-item" onclick="switchTab('tab-protocol', this)"><i class="ph-light ph-check-circle"></i><span>Protocol</span></div>
+        <div class="nav-item" onclick="switchTab('tab-focus', this)"><i class="ph-light ph-timer"></i><span>Focus</span></div>
+        <div class="nav-item" onclick="switchTab('tab-academics', this)"><i class="ph-light ph-graduation-cap"></i><span>Academic</span></div>
     </nav>
 
     <script>
         // ==========================================
-        // ☁️ JSONBin.io CLOUD SYNC CONFIGURATION
+        //  JSONBin.io CLOUD SYNC CONFIGURATION
         // ==========================================
-        const JSONBIN_MASTER_KEY = "$2a$10$KXNJ4eeGm9YNB2jQScSJXefQa7A62641AcLOBABgtXfpTOVcZIYVS"; // 👈 Paste your Master Key here
-        const JSONBIN_BIN_ID = "6a27cf44da38895dfe9eed75";         // 👈 Paste your Bin ID here
-        
-        // Change this to true when you paste your keys!
-        const SYNC_ENABLED = true; // ⚠️ Set to false to disable cloud sync (for testing without affecting your data)
+        const JSONBIN_MASTER_KEY = "YOUR_MASTER_KEY"; 
+        const JSONBIN_BIN_ID = "YOUR_BIN_ID";         
+        const SYNC_ENABLED = false; 
         // ==========================================
 
         // --- Audio API ---
@@ -340,197 +317,75 @@
         function playSound(type) {
             initAudio(); const osc = audioCtx.createOscillator(); const gainNode = audioCtx.createGain();
             osc.connect(gainNode); gainNode.connect(audioCtx.destination);
-            if (type === 'tick') { osc.type = 'sine'; osc.frequency.setValueAtTime(800, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(300, audioCtx.currentTime + 0.1); gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime); gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1); osc.start(); osc.stop(audioCtx.currentTime + 0.1); }
-            else if (type === 'pop') { osc.type = 'triangle'; osc.frequency.setValueAtTime(450, audioCtx.currentTime); gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime); gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1); osc.start(); osc.stop(audioCtx.currentTime + 0.1); }
-            else if (type === 'on') { osc.type = 'sine'; osc.frequency.setValueAtTime(400, audioCtx.currentTime); osc.frequency.setValueAtTime(600, audioCtx.currentTime + 0.05); gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime); gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.15); osc.start(); osc.stop(audioCtx.currentTime + 0.15); }
-            else if (type === 'off') { osc.type = 'sine'; osc.frequency.setValueAtTime(600, audioCtx.currentTime); osc.frequency.setValueAtTime(400, audioCtx.currentTime + 0.05); gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime); gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.15); osc.start(); osc.stop(audioCtx.currentTime + 0.15); }
-            else if (type === 'success') { osc.type = 'sine'; osc.frequency.setValueAtTime(440, audioCtx.currentTime); osc.frequency.setValueAtTime(554.37, audioCtx.currentTime + 0.1); osc.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.2); gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime); gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.6); osc.start(); osc.stop(audioCtx.currentTime + 0.6); }
+            if (type === 'tick') { osc.type = 'sine'; osc.frequency.setValueAtTime(800, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(400, audioCtx.currentTime + 0.1); gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime); gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1); osc.start(); osc.stop(audioCtx.currentTime + 0.1); }
+            else if (type === 'pop') { osc.type = 'sine'; osc.frequency.setValueAtTime(500, audioCtx.currentTime); gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime); gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1); osc.start(); osc.stop(audioCtx.currentTime + 0.1); }
+            else if (type === 'success') { osc.type = 'triangle'; osc.frequency.setValueAtTime(440, audioCtx.currentTime); osc.frequency.setValueAtTime(554.37, audioCtx.currentTime + 0.1); gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime); gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.4); osc.start(); osc.stop(audioCtx.currentTime + 0.4); }
         }
 
-        // --- Number Counter ---
-        function animateValue(id, start, end, duration) {
-            const obj = document.getElementById(id); let startTimestamp = null;
-            const step = (timestamp) => {
-                if (!startTimestamp) startTimestamp = timestamp;
-                const progress = Math.min((timestamp - startTimestamp) / duration, 1);
-                const easeOutQuad = 1 - (1 - progress) * (1 - progress);
-                obj.innerHTML = Math.floor(easeOutQuad * (end - start) + start);
-                if (progress < 1) window.requestAnimationFrame(step); else obj.innerHTML = end;
-            };
-            window.requestAnimationFrame(step);
-        }
-
-        // --- 3D ENGINE ---
-        const cards = document.querySelectorAll('.card');
-        if(window.innerWidth > 768) {
-            const cursorDot = document.querySelector('.cursor-dot'); const cursorOutline = document.querySelector('.cursor-outline');
-            window.addEventListener('mousemove', (e) => { cursorDot.style.left = `${e.clientX}px`; cursorDot.style.top = `${e.clientY}px`; cursorOutline.animate({ left: `${e.clientX}px`, top: `${e.clientY}px` }, { duration: 500, fill: "forwards" }); });
-            document.getElementById("cards-container").addEventListener('mousemove', e => {
-                const target = e.target.closest('.card'); if(!target) return;
-                const rect = target.getBoundingClientRect(); const x = e.clientX - rect.left; const y = e.clientY - rect.top;
-                target.style.setProperty("--mouse-x", `${x}px`); target.style.setProperty("--mouse-y", `${y}px`);
-                const centerX = rect.width / 2; const centerY = rect.height / 2;
-                target.style.setProperty('--rot-x', `${((y - centerY) / centerY) * -5}deg`); target.style.setProperty('--rot-y', `${((x - centerX) / centerX) * 5}deg`);
-            });
-            document.getElementById("cards-container").addEventListener('mouseout', e => {
-                const target = e.target.closest('.card'); if(!target) return;
-                target.style.setProperty('--rot-x', `0deg`); target.style.setProperty('--rot-y', `0deg`);
-            });
-        }
-        function handleScroll3D() {
-            const viewHeight = window.innerHeight; const scrollY = window.scrollY;
-            document.getElementById('bgText').style.transform = `translateY(${scrollY * 0.4}px) rotateX(${scrollY * 0.05}deg) translateZ(${-scrollY * 0.2}px)`;
-            cards.forEach(card => {
-                const rect = card.getBoundingClientRect();
-                if(rect.top < viewHeight + 200 && rect.bottom > -200) {
-                    const position = ((rect.top + (rect.height / 2)) - (viewHeight / 2)) / (viewHeight / 2);
-                    card.style.setProperty('--scroll-rot-x', `${position * 12}deg`);
-                    card.style.setProperty('--scroll-z', `${Math.abs(position) * -40}px`);
-                }
-            });
-            requestAnimationFrame(handleScroll3D);
-        }
-        function triggerReveals() {
-            cards.forEach((el, index) => {
-                if (el.getBoundingClientRect().top < window.innerHeight - 50 && !el.classList.contains('active')) {
-                    setTimeout(() => { el.classList.add("active"); setTimeout(() => el.classList.add("tracking"), 800); }, index * 150);
-                }
-            });
-        }
-        window.addEventListener("scroll", triggerReveals);
-
-        // --- State Management & Auto-Polling Cloud Sync ---
-        let state = JSON.parse(localStorage.getItem('dspStateFinalAll')) || {
-            cigCount: 0, promises: [], challengeDays: Array(30).fill(0), ptEnabled: true, isHoliday: false
+        // --- State Management ---
+        let state = JSON.parse(localStorage.getItem('dspStateiOS')) || {
+            cigCount: 0, promises: [], challengeDays: Array(30).fill(0), ptEnabled: true, isHoliday: false,
+            pomoSessions: 0,
+            wrongAnswers: { polsci: 0, philo: 0, bengali: 0, english: 0 }
         };
 
+        const subjects = [
+            { id: 'polsci', name: 'Pol. Science', color: 'var(--apple-blue)' },
+            { id: 'philo', name: 'Philosophy', color: 'var(--apple-purple)' },
+            { id: 'bengali', name: 'Bengali', color: 'var(--apple-green)' },
+            { id: 'english', name: 'English', color: 'var(--apple-orange)' }
+        ];
+
         const saveState = async () => {
-            localStorage.setItem('dspStateFinalAll', JSON.stringify(state));
+            localStorage.setItem('dspStateiOS', JSON.stringify(state));
             if(SYNC_ENABLED) {
-                try {
-                    await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`, {
-                        method: 'PUT',
-                        headers: { 'Content-Type': 'application/json', 'X-Master-Key': JSONBIN_MASTER_KEY },
-                        body: JSON.stringify(state)
-                    });
-                } catch(e) { console.error("Cloud Save Error:", e); }
+                try { fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'X-Master-Key': JSONBIN_MASTER_KEY }, body: JSON.stringify(state) }); } catch(e) {}
             }
         };
 
-        const loadFromCloud = async (silent = false) => {
-            if(!SYNC_ENABLED) return;
-            try {
-                const response = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest`, {
-                    headers: { 'X-Master-Key': JSONBIN_MASTER_KEY }
-                });
-                if(response.ok) {
-                    const data = await response.json();
-                    if(data.record) {
-                        const currentLocal = localStorage.getItem('dspStateFinalAll');
-                        const incomingRemote = JSON.stringify(data.record);
-                        
-                        // Only refresh UI if there's new data from another device
-                        if (currentLocal !== incomingRemote) {
-                            state = data.record;
-                            localStorage.setItem('dspStateFinalAll', incomingRemote);
-                            refreshUIElements(); 
-                            if(!silent) showToast("Cloud data updated ☁️");
-                        }
-                    }
-                }
-            } catch(e) { console.error("Cloud Load Error:", e); }
-        };
-
-        const studyRoutine = { 0: { day: 'Sunday', subjects: ['🔄 Full Revision', '📝 Mock Test'] }, 1: { day: 'Monday', subjects: ['📘 Bengali', '🏛️ Pol. Science'] }, 2: { day: 'Tuesday', subjects: ['📕 English', '🤔 Philosophy'] }, 3: { day: 'Wednesday', subjects: ['🎓 Education', '🕉️ Sanskrit'] }, 4: { day: 'Thursday', subjects: ['🏛️ Pol. Science', '📘 Bengali'] }, 5: { day: 'Friday', subjects: ['🤔 Philosophy', '📕 English'] }, 6: { day: 'Saturday', subjects: ['🕉️ Sanskrit', '🎓 Education'] } };
-        const holidayRoutine = ['🏆 1 Full Mock Test', '📊 Weakness Analysis', '🏃‍♂️ Extended PT', '🧘‍♂️ Mindset & Relax'];
-
-        // --- Initialization & Real-Time Listeners ---
-        window.onload = async () => {
-            setGreeting(); refreshUIElements(); triggerReveals(); requestAnimationFrame(handleScroll3D); 
-            initChart(); // Init chart once on load
-            rotateQuotes();
-            document.getElementById('bgText').innerText = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'][new Date().getDay()];
+        // --- Initialization ---
+        window.onload = () => {
+            setGreeting(); refreshUIElements(); initChart(); rotateQuotes(); renderWrongTracker();
             document.body.addEventListener('touchstart', initAudio, { once: true }); document.body.addEventListener('click', initAudio, { once: true });
-            
-            // Initial Load
-            await loadFromCloud();
-
-            // Auto-Sync every 30 seconds silently if tab is active
-            setInterval(async () => {
-                if (SYNC_ENABLED && document.visibilityState === 'visible') {
-                    await loadFromCloud(true);
-                }
-            }, 30000);
-
-            // Instant Sync when returning to tab
-            document.addEventListener("visibilitychange", async () => {
-                if (document.visibilityState === 'visible' && SYNC_ENABLED) {
-                    await loadFromCloud(false);
-                }
-            });
         };
 
-        function refreshUIElements() {
-            updateCig(0, true); renderPromises(); renderCalendar(); 
-            initToggles(); renderRoutine(); 
+        function refreshUIElements() { 
+            updateCig(0, true); renderPromises(); renderCalendar(); initToggles(); 
+            document.getElementById('pomoCount').innerText = state.pomoSessions;
+            calcStreak();
         }
 
-        function calculateAndAnimateStats() {
+        function calcStreak() {
             let maxStreak = 0, currentStreak = 0;
             state.challengeDays.forEach(day => { if (day === 1) { currentStreak++; maxStreak = Math.max(maxStreak, currentStreak); } else if (day === 3) { currentStreak = 0; } });
-            const daysLeft = 30 - state.challengeDays.filter(d => d !== 0).length;
-            animateValue("heroStreak", parseInt(document.getElementById("heroStreak").innerText) || 0, maxStreak, 1500);
-            animateValue("heroDaysLeft", parseInt(document.getElementById("heroDaysLeft").innerText) || 0, daysLeft, 1500);
+            document.getElementById("heroStreak").innerText = maxStreak;
         }
 
-        function initToggles() { document.getElementById('ptToggle').checked = state.ptEnabled; applyPTState(); document.getElementById('holidayToggle').checked = state.isHoliday; }
-
-        function toggleHoliday() {
-            state.isHoliday = document.getElementById('holidayToggle').checked;
-            playSound(state.isHoliday ? 'on' : 'off');
-            saveState(); renderRoutine(); showToast(state.isHoliday ? "Holiday Mode Activated 🌴" : "Standard Routine Resumed 📚");
-        }
-
-        function renderRoutine() {
-            const display = document.getElementById('dynamicRoutineDisplay'); const dayLabel = document.getElementById('routineDay');
-            display.style.opacity = 0; dayLabel.style.opacity = 0;
-            setTimeout(() => {
-                if(state.isHoliday) {
-                    dayLabel.innerText = "HOLIDAY MODE 🌴"; dayLabel.style.color = "var(--accent-orange)"; dayLabel.style.borderColor = "rgba(245, 158, 11, 0.3)";
-                    display.innerHTML = holidayRoutine.map((sub, i) => `<div class="target-chip holiday-chip" style="animation-delay: ${i * 0.1}s">${sub}</div>`).join('');
-                } else {
-                    const currentRoutine = studyRoutine[new Date().getDay()]; dayLabel.innerText = currentRoutine.day.toUpperCase() + " ROUTINE"; dayLabel.style.color = "#fff"; dayLabel.style.borderColor = "rgba(255,255,255,0.1)";
-                    display.innerHTML = currentRoutine.subjects.map((sub, i) => `<div class="target-chip" style="animation-delay: ${i * 0.1}s">${sub}</div>`).join('');
-                }
-                display.style.opacity = 1; dayLabel.style.opacity = 1;
-            }, 300);
-        }
-
-        function togglePT() { state.ptEnabled = document.getElementById('ptToggle').checked; playSound(state.ptEnabled ? 'on' : 'off'); saveState(); applyPTState(); recalculateProgress(); showToast(state.ptEnabled ? "Physical Training Enabled 💪" : "Physical Training Disabled ⏸️"); }
+        function initToggles() { document.getElementById('ptToggle').checked = state.ptEnabled; applyPTState(); }
+        function togglePT() { state.ptEnabled = document.getElementById('ptToggle').checked; playSound('pop'); saveState(); applyPTState(); recalculateProgress(); }
         function applyPTState() {
             const ptTask = document.querySelector('.pt-task');
-            if(state.ptEnabled) { ptTask.classList.remove('hidden-task'); } 
-            else { ptTask.classList.add('hidden-task'); const cb = ptTask.querySelector('input'); if(cb.checked) { cb.checked = false; ptTask.classList.remove('checked'); } }
+            if(state.ptEnabled) { ptTask.classList.remove('hidden-task'); } else { ptTask.classList.add('hidden-task'); const cb = ptTask.querySelector('input'); if(cb.checked) { cb.checked = false; ptTask.classList.remove('checked'); } }
             recalculateProgress();
         }
 
+        // --- Tab Switcher ---
         function switchTab(tabId, element) {
-            if(window.innerWidth > 1024) return;
-            playSound('pop'); document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            playSound('pop'); 
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.nav-item').forEach(el => { el.classList.remove('active'); el.querySelector('i').classList.replace('ph-fill', 'ph-light'); });
-            document.getElementById(tabId).classList.add('active'); if(element) { element.classList.add('active'); element.querySelector('i').classList.replace('ph-light', 'ph-fill'); }
+            document.getElementById(tabId).classList.add('active'); 
+            element.classList.add('active'); element.querySelector('i').classList.replace('ph-light', 'ph-fill');
             window.scrollTo({ top: 0, behavior: 'smooth' });
-            cards.forEach(el => { el.classList.remove('active', 'tracking'); }); setTimeout(triggerReveals, 50);
         }
 
-        function showToast(message) { const toast = document.getElementById('toast'); document.getElementById('toastMsg').innerText = message; toast.classList.add('show'); setTimeout(() => toast.classList.remove('show'), 3500); }
-        function setGreeting() { const hour = new Date().getHours(); document.getElementById('greeting').innerText = `${hour < 12 ? "Good Morning 🌅" : hour < 17 ? "Good Afternoon ☀️" : "Good Evening 🌙"}, Abhi`; }
+        function showToast(message) { const toast = document.getElementById('toast'); document.getElementById('toastMsg').innerText = message; toast.classList.add('show'); setTimeout(() => toast.classList.remove('show'), 3000); }
+        function setGreeting() { const hour = new Date().getHours(); document.getElementById('greeting').innerText = `${hour < 12 ? "Good Morning" : hour < 17 ? "Good Afternoon" : "Good Evening"}, Abhi`; }
 
+        // --- Tasks & Progress ---
         function toggleTask(element) {
             playSound('tick'); const checkbox = element.querySelector('input'); checkbox.checked = !checkbox.checked; element.classList.toggle('checked', checkbox.checked); recalculateProgress();
-            if(document.querySelectorAll('.task-item:not(.hidden-task) input').length === document.querySelectorAll('.task-item:not(.hidden-task) input:checked').length && document.querySelectorAll('.task-item:not(.hidden-task) input').length > 0) {
-                setTimeout(() => playSound('success'), 200); showToast("Protocol Complete! Outstanding. 🏆");
-            }
+            if(document.querySelectorAll('.task-item:not(.hidden-task) input').length === document.querySelectorAll('.task-item:not(.hidden-task) input:checked').length) { setTimeout(() => playSound('success'), 200); showToast("Protocol Complete! "); }
         }
 
         function recalculateProgress() {
@@ -539,48 +394,89 @@
             const percent = total === 0 ? 0 : Math.round((checked / total) * 100);
             document.getElementById('taskPercent').innerText = `${percent}%`;
             const circle = document.getElementById('taskRing'); circle.style.strokeDashoffset = 440 - (440 * percent) / 100;
-            if(percent === 100) { circle.style.stroke = "var(--accent-green)"; document.getElementById('taskPercent').style.color = "var(--accent-green)"; circle.style.filter = "drop-shadow(0 0 15px rgba(16, 185, 129, 0.4))"; } 
-            else { circle.style.stroke = "var(--accent-blue)"; document.getElementById('taskPercent').style.color = "#fff"; circle.style.filter = "drop-shadow(0 0 15px rgba(59, 130, 246, 0.2))"; }
         }
 
         function updVal(id) { document.getElementById('v-' + id).innerText = document.getElementById('i-' + id).value; }
-        function saveCheckIn() { playSound('pop'); showToast("Systems metrics securely logged. 💾"); }
 
         function updateCig(change, skipSave = false) {
             if(!skipSave && change !== 0) playSound('pop');
             state.cigCount = Math.max(0, state.cigCount + change);
-            const display = document.getElementById('cigCountDisplay'); display.innerText = state.cigCount;
-            if(!skipSave && change !== 0) { display.style.transform = 'scale(1.2) translateY(-10px)'; setTimeout(() => { display.style.transform = 'scale(1) translateY(0)'; }, 300); }
-            if(change !== 0 && !skipSave) { showToast(change > 0 ? "Log updated. Stay strong. 🛡️" : "Corrected. 👍"); saveState(); }
+            document.getElementById('cigCountDisplay').innerText = state.cigCount;
+            if(change !== 0 && !skipSave) { showToast(change > 0 ? "Log updated. Stay strong." : "Corrected."); saveState(); }
         }
 
+        // --- Wrong Answer Tracker ---
+        function renderWrongTracker() {
+            const list = document.getElementById('wrongTrackerList');
+            list.innerHTML = subjects.map(s => `
+                <div class="wrong-row">
+                    <span style="font-weight: 600; color: ${s.color}; font-size: 1.1rem;">${s.name}</span>
+                    <div class="wrong-ctrls">
+                        <button class="btn-sm secondary" onclick="updateWrong('${s.id}', -1)">-</button>
+                        <span style="font-size: 1.5rem; font-weight: 700; width: 30px; text-align: center;">${state.wrongAnswers[s.id]}</span>
+                        <button class="btn-sm" style="background: ${s.color};" onclick="updateWrong('${s.id}', 1)">+</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function updateWrong(id, change) {
+            playSound('pop');
+            state.wrongAnswers[id] = Math.max(0, state.wrongAnswers[id] + change);
+            saveState(); renderWrongTracker();
+        }
+
+        // --- Timers Logic ---
+        let pomoTime = 45 * 60, breakTime = 10 * 60;
+        let pomoInterval, breakInterval;
+        let isPomoRunning = false, isBreakRunning = false;
+
+        function formatTime(seconds) { const m = Math.floor(seconds / 60); const s = seconds % 60; return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`; }
+
+        function togglePomo() {
+            const btn = document.getElementById('pomoBtn'); playSound('pop');
+            if(isPomoRunning) { clearInterval(pomoInterval); isPomoRunning = false; btn.innerText = "Resume"; btn.style.background = "var(--apple-blue)"; } 
+            else {
+                isPomoRunning = true; btn.innerText = "Pause"; btn.style.background = "var(--apple-orange)";
+                pomoInterval = setInterval(() => {
+                    pomoTime--; document.getElementById('pomoDisplay').innerText = formatTime(pomoTime);
+                    if(pomoTime <= 0) { clearInterval(pomoInterval); isPomoRunning = false; playSound('success'); state.pomoSessions++; saveState(); document.getElementById('pomoCount').innerText = state.pomoSessions; resetPomo(); showToast("Session Complete! Take a break."); }
+                }, 1000);
+            }
+        }
+        function resetPomo() { playSound('pop'); clearInterval(pomoInterval); isPomoRunning = false; pomoTime = 45 * 60; document.getElementById('pomoDisplay').innerText = formatTime(pomoTime); document.getElementById('pomoBtn').innerText = "Start"; document.getElementById('pomoBtn').style.background = "var(--apple-blue)"; }
+
+        function toggleBreak() {
+            const btn = document.getElementById('breakBtn'); playSound('pop');
+            if(isBreakRunning) { clearInterval(breakInterval); isBreakRunning = false; btn.innerText = "Resume"; } 
+            else {
+                isBreakRunning = true; btn.innerText = "Pause";
+                breakInterval = setInterval(() => {
+                    breakTime--; document.getElementById('breakDisplay').innerText = formatTime(breakTime);
+                    if(breakTime <= 0) { clearInterval(breakInterval); isBreakRunning = false; playSound('success'); resetBreak(); showToast("Break Over! Back to work."); }
+                }, 1000);
+            }
+        }
+        function resetBreak() { playSound('pop'); clearInterval(breakInterval); isBreakRunning = false; breakTime = 10 * 60; document.getElementById('breakDisplay').innerText = formatTime(breakTime); document.getElementById('breakBtn').innerText = "Start Break"; }
+
+        // --- Promises & Calendar ---
         function addPromise() {
             const input = document.getElementById('promiseInput'); if(!input.value.trim()) return;
             playSound('pop'); state.promises.unshift({ text: input.value, date: new Date().toLocaleDateString() });
             if(state.promises.length > 5) state.promises.pop();
-            input.value = ''; saveState(); renderPromises(); showToast("Promise recorded. 🤝");
+            input.value = ''; saveState(); renderPromises(); showToast("Promise recorded. ");
         }
+        function renderPromises() { document.getElementById('promiseList').innerHTML = state.promises.map((p) => `<div style="padding: 1.2rem; border-radius: 16px; background: rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center;"><span style="font-size: 1rem;">${p.text}</span><small style="color: var(--text-muted);">${p.date}</small></div>`).join(''); }
 
-        function renderPromises() {
-            document.getElementById('promiseList').innerHTML = state.promises.map((p, i) => `<div style="padding: 1.2rem; border-radius: 16px; border: 1px solid rgba(255,255,255,0.05); background: rgba(255,255,255,0.02); display: flex; justify-content: space-between; align-items: center; animation: fadeSlide 0.6s forwards; opacity: 0; animation-delay: ${i * 0.1}s;"><span style="font-size: 1rem;">${p.text}</span><small style="color: var(--text-muted); font-size: 0.75rem;">${p.date}</small></div>`).join('');
-        }
+        function renderCalendar() { document.getElementById('calendarGrid').innerHTML = state.challengeDays.map((status, i) => `<div class="day-box ${status === 1 ? 'day-completed' : status === 2 ? 'day-partial' : status === 3 ? 'day-missed' : ''}" onclick="toggleDay(${i})">${i + 1}</div>`).join(''); calcStreak(); }
+        function toggleDay(index) { playSound('tick'); state.challengeDays[index] = (state.challengeDays[index] + 1) % 4; saveState(); renderCalendar(); }
 
-        function renderCalendar() {
-            document.getElementById('calendarGrid').innerHTML = state.challengeDays.map((status, i) => `<div class="day-box ${status === 1 ? 'day-completed' : status === 2 ? 'day-partial' : status === 3 ? 'day-missed' : ''}" onclick="toggleDay(${i})" style="animation: fadeSlide 0.5s forwards; opacity: 0; animation-delay: ${(i%7) * 0.05}s;">${i + 1}</div>`).join('');
-            calculateAndAnimateStats();
-        }
-
-        function toggleDay(index) { playSound('tick'); state.challengeDays[index] = (state.challengeDays[index] + 1) % 4; saveState(); renderCalendar(); showToast("Day status updated. 🗓️"); }
-
-        const quotes = ["Discipline is choosing between what you want now and what you want most. ⚖️", "The distance between dreams and reality is called discipline. 🌉", "A DSP officer is forged in the silent hours of relentless study. 👮‍♂️", "Success is the sum of small efforts, repeated day-in and day-out. 🔄"];
-        function rotateQuotes() {
-            let i = 0; const el = document.getElementById('quoteDisplay'); el.innerText = `"${quotes[0]}"`;
-            setInterval(() => { i = (i + 1) % quotes.length; el.style.opacity = 0; el.style.transform = 'translateY(10px) translateZ(10px)'; setTimeout(() => { el.innerText = `"${quotes[i]}"`; el.style.opacity = 1; el.style.transform = 'translateY(0) translateZ(20px)'; }, 800); }, 7000);
-        }
+        const quotes = ["Discipline is choosing between what you want now and what you want most.", "The distance between dreams and reality is called discipline.", "A DSP officer is forged in the silent hours of relentless preparation."];
+        function rotateQuotes() { let i = 0; const el = document.getElementById('quoteDisplay'); el.innerText = `"${quotes[0]}"`; setInterval(() => { i = (i + 1) % quotes.length; el.style.opacity = 0; setTimeout(() => { el.innerText = `"${quotes[i]}"`; el.style.opacity = 1; }, 400); }, 6000); }
 
         function initChart() {
-            const ctx = document.getElementById('trendChart').getContext('2d'); Chart.defaults.font.family = "'Inter', sans-serif"; Chart.defaults.color = '#64748b';
-            new Chart(ctx, { type: 'line', data: { labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'], datasets: [{ label: 'Discipline', data: [6, 7, 7, 8, 7, 9, 8], borderColor: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.1)', fill: true, tension: 0.5, borderWidth: 3, pointBackgroundColor: '#fff', pointRadius: 3 }, { label: 'Focus', data: [5, 6, 8, 7, 8, 8, 9], borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.1)', fill: true, tension: 0.5, borderWidth: 3, pointBackgroundColor: '#fff', pointRadius: 3 }] }, options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, plugins: { legend: { labels: { usePointStyle: true, padding: 15 } } }, scales: { y: { border: {display: false}, grid: { color: 'rgba(255,255,255,0.03)' }, beginAtZero: true, max: 10 }, x: { border: {display: false}, grid: { display: false } } } } });
+            const ctx = document.getElementById('trendChart').getContext('2d'); Chart.defaults.color = '#EBEBF599';
+            new Chart(ctx, { type: 'line', data: { labels: ['M', 'T', 'W', 'T', 'F', 'S', 'S'], datasets: [{ label: 'Discipline', data: [6, 7, 7, 8, 7, 9, 8], borderColor: '#0A84FF', backgroundColor: 'rgba(10, 132, 255, 0.1)', fill: true, tension: 0.4, borderWidth: 3, pointBackgroundColor: '#FFF' }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { border: {display: false}, grid: { color: 'rgba(255,255,255,0.05)' }, max: 10 }, x: { border: {display: false}, grid: { display: false } } } } });
         }
     </script>
 </body>
